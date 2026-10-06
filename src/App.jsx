@@ -3,11 +3,11 @@ import api, { clearTokens } from "./api";
 import AuthPage from "./AuthPage";
 import Products from "./Products";
 import ThemeToggle from "./ThemeToggle";
- 
+
 export default function App() {
   const [user, setUser] = useState(null);
   const [checking, setChecking] = useState(!!localStorage.getItem("access_token"));
- 
+
   // On page load, ask the API who we are (keeps the role accurate)
   useEffect(() => {
     if (!localStorage.getItem("access_token")) return;
@@ -17,7 +17,7 @@ export default function App() {
       .catch(() => clearTokens())
       .finally(() => setChecking(false));
   }, []);
- 
+
   const logout = async () => {
     try {
       await api.post("/api/auth/logout", {
@@ -29,38 +29,49 @@ export default function App() {
     clearTokens();
     setUser(null);
   };
- 
+
+  if (checking) return <p className="center muted pad">Loading…</p>;
+
+  if (!user) {
+    return (
+      <>
+        <div className="auth-theme">
+          <ThemeToggle />
+        </div>
+        <AuthPage onAuth={setUser} />
+      </>
+    );
+  }
+
   return (
-    <>
-      <header className="topbar">
-        <div className="topbar-inner">
-          <span className="brand">
-            <span className="brand-mark" /> Inventory
-          </span>
-          <div className="topbar-right">
-            {user && (
-              <>
-                <span className="who">{user.username}</span>
-                <span className={`badge ${user.role === "admin" ? "badge-admin" : ""}`}>{user.role}</span>
-              </>
-            )}
+    <div className="shell">
+      <aside className="sidebar">
+        <span className="brand">
+          <span className="brand-mark" /> Inventory
+        </span>
+
+        <nav className="nav">
+          <span className="nav-item active">Products</span>
+        </nav>
+
+        <div className="sidebar-foot">
+          <div className="user-chip">
+            <span className="avatar">{user.username.charAt(0).toUpperCase()}</span>
+            <div className="user-meta">
+              <span className="who">{user.username}</span>
+              <span className={`badge ${user.role === "admin" ? "badge-admin" : ""}`}>{user.role}</span>
+            </div>
+          </div>
+          <div className="foot-actions">
             <ThemeToggle />
-            {user && (
-              <button className="btn btn-ghost btn-sm" onClick={logout}>
-                Logout
-              </button>
-            )}
+            <button className="btn btn-ghost btn-sm" onClick={logout}>
+              Logout
+            </button>
           </div>
         </div>
-      </header>
- 
-      {checking ? (
-        <p className="center muted">Loading…</p>
-      ) : user ? (
-        <Products user={user} />
-      ) : (
-        <AuthPage onAuth={setUser} />
-      )}
-    </>
+      </aside>
+
+      <Products user={user} />
+    </div>
   );
 }
